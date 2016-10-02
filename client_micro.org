@@ -1,0 +1,78 @@
+#+TITLE: Server CRUD API
+#+OPTIONS: toc:nil
+* Overview
+This document describes the API for controlling ModularIoT devices through the ModularIoT server. This document does not describe the hardware API. This document does not describe the web interface. There are four types of devices; switches, radios, selects, and knobs. A switch can be either on or off, but never both. A radio can be any subset of several options. A select can be one of several options. A knob can be any real number within a range. More detailed explanations of the four different devices can be found below. The API is a set of valid HTTP requests with JSON text in their bodies.
+
+* Conventions
+The variable $VERSION is used throughout this document to refer to the version of the API being used. The variable is a string that can contain any characters that can be used in a URL.
+
+* API
+** List Devices
+To get a list of devices, send a GET request to the following URL.
+#+BEGIN_SRC
+GET /api/$VERSION/devices
+#+END_SRC
+Each device is a hash table with a id number, device type, and state attribute. Here is an example return value.
+#+BEGIN_SRC json
+{"id" : 0,
+  "type" : "switch",
+  "state" : "ON"}
+[{"id" : 0,
+  "type" : "switch",
+  "state" : "ON"},
+ {"id" : 1,
+  "type" : "radio",
+  "state" : []},
+ {"id" : 2,
+  "type" : "select",
+  "state" : 4}]
+#+END_SRC
+If there are no devices, an empty list is returned.
+** Get Device
+If the id of a device is already known, the device info can be retrieved directly with a get request to the given URL. This is the same as the devices URL, but with the device id number added to the end.
+#+BEGIN_SRC
+GET /api/$VERSION/devices/$ID
+#+END_SRC
+Here is an example return value.
+#+BEGIN_SRC
+{"id" : 0,
+ "type" : "switch",
+ "state" : "OFF"}
+#+END_SRC
+If no device has the given id number, the following message is sent as a reply.
+#+BEGIN_SRC json
+{"error" : "id"}
+#+END_SRC
+The message may contain a message attribute with a description of the problem for the developer.
+#+BEGIN_SRC json
+{"error" : "id"
+ "message" : "There was no device with the given ID."}
+#+END_SRC json
+
+** Update Device
+To change the state of a device, send a POST request to the following URL with a JSON object containing the id number of the object to change and the new state value for the object.
+#+BEGIN_SRC
+POST /api/$VERSION/devices/$ID
+#+END_SRC
+Here is an example JSON body.
+#+BEGIN_SRC json
+{"id" : 0, "state" : 1}
+#+END_SRC
+Each device type only accepts certain values for state. A switch device can contain the string "ON" or the string "OFF". A radio device contains a list of integers where each integer indexes a valid radio button for that device. A select device contains an integer that indexes a valid button out of the possible choices. A knob contains any real number within its given bounds.
+
+
+If a switch device is given an invalid state.
+{"error" : "state"
+ "message" : "This devices is a switch; the state must be \"ON\" or \"OFF\""}
+If a radio device is given an invalid state.
+{"error" : "state",
+ "message" : "This devices is a radio; the state must be a list of valid indices."}
+If a select device is given an invalid state.
+{"error" : "state",
+ "message" : "This device is a select; the state must be a valid index."
+If no device can be found with the given ID.
+{"error" : "id"
+ "message" : "There was no device with the given ID."}
+
+
+
